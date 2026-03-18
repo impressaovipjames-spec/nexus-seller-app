@@ -75,10 +75,13 @@ body {
 }
 
 .history-item {
-    padding: 0.8rem;
-    border-bottom: 1px solid var(--border);
+    padding: 12px;
+    border-bottom: 1px solid #eee;
     cursor: pointer;
     transition: 0.2s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .history-item:hover {
