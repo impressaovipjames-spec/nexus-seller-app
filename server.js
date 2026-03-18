@@ -261,5 +261,5 @@ app.get('/health', (req, res) => {
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🔥 SERVER REALMENTE ATIVO NA PORTA ${PORT}`);
+    console.log(`🚀 NEXUS SELLER - SISTEMA AUTÔNOMO ATIVO NA PORTA ${PORT}`);
 });
