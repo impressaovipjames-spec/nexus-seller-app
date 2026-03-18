@@ -12,7 +12,7 @@
         <aside class="sidebar">
             <div class="logo">
                 <img src="logo.png" alt="Achadinhos da Taty Logo">
-                <p>Curadoria Inteligente</p>
+                <p>Curadoria Inteligente V2</p>
             </div>
             <div class="history-section">
                 <h3>HISTÓRICO</h3>
@@ -20,98 +20,62 @@
                     <!-- Itens via JS -->
                 </ul>
             </div>
-
         </aside>
 
         <main class="content">
             <header>
-                <h2>Achadinhos Intelligence ✨</h2>
-                <nav class="tabs">
-                    <button class="tab-btn active" onclick="switchTab('generator')">MOTOR ⚡</button>
-                    <button class="tab-btn" onclick="switchTab('dashboard')">ESTATÍSTICAS 📊</button>
-                </nav>
+                <h2>NEXUS SELLER V2 <span class="badge">Orion Engine</span></h2>
                 <div class="status-badge" id="appStatus">Sistema Online</div>
             </header>
 
-            <section id="generatorTab" class="tab-content active">
-                <div class="main-grid">
-                <section class="form-card">
-                    <form id="productForm">
-                        <div class="input-group">
-                            <label>Nome do Produto</label>
-                            <input type="text" id="nome_produto" placeholder="Ex: Nexus Coffee" required>
+            <div class="v2-grid">
+                <!-- Coluna de Entrada -->
+                <section class="action-card">
+                    <div class="card-header">
+                        <h3>NOVA ESTRATÉGIA</h3>
+                        <p>Envie a foto e receba o lucro.</p>
+                    </div>
+                    
+                    <div id="dropZone" class="upload-area">
+                        <input type="file" id="imageInput" accept="image/*" hidden>
+                        <div class="upload-prompt">
+                            <span class="icon">📸</span>
+                            <p>Clique ou arraste a <strong>foto do produto</strong></p>
+                            <span class="subtext">JPG, PNG ou WebP</span>
                         </div>
-                        <div class="input-row">
-                            <div class="input-group">
-                                <label>Preço (R$)</label>
-                                <input type="text" id="preco" placeholder="0,00">
-                            </div>
-                            <div class="input-group">
-                                <label>Canal</label>
-                                <select id="canal">
-                                    <option value="Instagram/TikTok">Instagram / TikTok</option>
-                                    <option value="Shopee">Shopee / Marketplace</option>
-                                    <option value="WhatsApp">WhatsApp</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="input-group">
-                            <label>Descrição Curta</label>
-                            <textarea id="descricao" placeholder="O que o produto faz?"></textarea>
-                        </div>
-                        <div class="input-group">
-                            <label>Público Alvo</label>
-                            <input type="text" id="publico" placeholder="Ex: Empreendedores">
-                        </div>
-                        <div class="input-group">
-                            <label>Problema que Resolve</label>
-                            <input type="text" id="problema" placeholder="Qual a dor do cliente?">
-                        </div>
-                        <div class="input-group">
-                            <label>Diferencial Visual</label>
-                            <input type="text" id="diferencial" placeholder="O que se destaca?">
-                        </div>
-                        <div class="btn-group">
-                            <button type="submit" id="generateBtn">Gerar Kit A/B 🚀✨</button>
-                            <button type="button" id="achadinhoBtn" class="btn-secondary">Modo Achadinho ✨💖</button>
-                        </div>
-                    </form>
+                        <img id="imagePreview" class="hidden">
+                    </div>
+
+                    <div class="input-minimal">
+                        <label>Preço Sugerido (R$)</label>
+                        <input type="text" id="preco" placeholder="0,00">
+                    </div>
+
+                    <button id="generateBtnV2" class="btn-main-v2">
+                        GERAR ESTRATÉGIA ⚡
+                    </button>
                 </section>
 
-                <section class="result-card">
+                <!-- Coluna de Saída -->
+                <section class="result-card-v2">
                     <div class="result-header">
-                        <h3>SAÍDA ESTRUTURADA</h3>
-                        <div class="copy-options">
-                            <button class="copy-sub btn-shopee" onclick="copyByChannel('shopee')">SHOPEE</button>
-                            <button class="copy-sub btn-instagram" onclick="copyByChannel('instagram')">INSTAGRAM</button>
-                            <button class="copy-sub btn-whatsapp" onclick="copyByChannel('whatsapp')">WHATSAPP</button>
-                            <button id="copyBtn">TUDO</button>
+                        <h3>ESTRATÉGIA PRONTA</h3>
+                        <div class="copy-bar">
+                            <button class="copy-tiny" onclick="copyByChannel('whatsapp')">WHATSAPP</button>
+                            <button class="copy-tiny" onclick="copyByChannel('instagram')">INSTA</button>
+                            <button class="copy-tiny" onclick="copyByChannel('shopee')">SHOPEE</button>
                         </div>
                     </div>
-                    <div class="result-content" id="resultDisplay">
-                        <div class="placeholder-msg">Preencha o formulário para visualizar o kit aqui.</div>
+                    <div class="result-box" id="resultDisplay">
+                        <div class="placeholder-msg">A inteligência Orion aguarda sua foto...</div>
                     </div>
                 </section>
-                </div>
-            </section>
-
-            <section id="dashboardTab" class="tab-content">
-                <div class="dashboard-header">
-                    <h3>🏆 PRODUTOS CAMPEÕES</h3>
-                    <div class="dashboard-actions">
-                        <button class="copy-sub" id="filterChampions" onclick="toggleChampions()">FILTRAR CAMPEÕES ⭐</button>
-                        <button class="copy-sub" onclick="loadDashboard()">ATUALIZAR 🔄</button>
-                    </div>
-                </div>
-                <div id="metricsDisplay">
-                    <div class="placeholder-msg">Carregando performance...</div>
-                </div>
-            </section>
+            </div>
         </main>
     </div>
     
     <footer class="main-footer">
-        NEXUS SELLER - DESENVOLVIDO POR VIPNEXUS IA - TODOS OS DIREITOS RESERVADOS - MARÇO 2026
+        NEXUS SELLER V2 - ESFORÇO ZERO - VIPNEXUS IA 2026
     </footer>
 
     <script src="/script.js"></script>

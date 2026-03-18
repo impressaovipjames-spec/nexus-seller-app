@@ -429,18 +429,137 @@ button:active {
     border-radius: 4px;
 }
 
-/* Rodapé Global e Centralizado - Travado no fundo para zero scroll */
-.main-footer {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    text-align: center;
-    padding: 0.5rem 0;
-    font-size: 0.7rem;
+/* --- NEXUS V2 (ESFORÇO ZERO) --- */
+
+.v2-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-top: 1rem;
+}
+
+.action-card, .result-card-v2 {
+    background: var(--card-bg);
+    border: 2px solid var(--border);
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.05);
+}
+
+.card-header h3 {
+    font-size: 1.2rem;
+    color: var(--text-main);
+    margin-bottom: 0.3rem;
+}
+
+.card-header p {
+    font-size: 0.85rem;
     color: var(--text-dim);
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    background: transparent;
-    z-index: 1000;
+    margin-bottom: 2rem;
+}
+
+.upload-area {
+    width: 100%;
+    height: 250px;
+    border: 3px dashed var(--border);
+    border-radius: 15px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: 0.3s;
+    background: var(--input-bg);
+    position: relative;
+    overflow: hidden;
+}
+
+.upload-area:hover {
+    border-color: var(--accent-lilac);
+    background: #FFFFFF;
+}
+
+.upload-prompt {
+    text-align: center;
+}
+
+.upload-prompt .icon {
+    font-size: 3rem;
+    display: block;
+    margin-bottom: 1rem;
+}
+
+.upload-prompt p {
+    font-size: 1rem;
+    color: var(--text-main);
+}
+
+.upload-prompt .subtext {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+}
+
+#imagePreview {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.input-minimal {
+    margin-top: 2rem;
+}
+
+.btn-main-v2 {
+    margin-top: 1.5rem;
+    background: var(--grad-pink-lilac);
+    font-size: 1.1rem;
+    height: 60px;
+    letter-spacing: 1px;
+}
+
+.copy-bar {
+    display: flex;
+    gap: 10px;
+}
+
+.copy-tiny {
+    width: auto;
+    padding: 5px 15px;
+    font-size: 0.7rem;
+    border-radius: 10px;
+    background: #eee;
+    color: #555;
+    box-shadow: none;
+}
+
+.copy-tiny:hover {
+    background: var(--accent-lilac);
+    color: #fff;
+}
+
+.result-box {
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-radius: 15px;
+    padding: 1.5rem;
+    min-height: 480px;
+    white-space: pre-wrap;
+    line-height: 1.7;
+    font-size: 1rem;
+    color: #333;
+}
+
+.hidden { display: none; }
+
+.badge {
+    font-size: 0.6rem;
+    background: var(--accent-gold);
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 5px;
+    vertical-align: middle;
+    margin-left: 10px;
 }

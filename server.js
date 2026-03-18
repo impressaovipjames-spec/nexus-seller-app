@@ -11,8 +11,10 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
+const multer = require('multer');
 
 const app = express();
+const upload = multer({ dest: 'uploads/' });
 const config = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), 'utf8'));
 const PORT = process.env.PORT || config.port || 8080;
 console.log(`🔥 SERVER ATIVO NA PORTA ${PORT}`);
@@ -260,6 +262,107 @@ app.get('/health', (req, res) => {
     res.send('OK - NEXUS IS ALIVE');
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 NEXUS SELLER - SISTEMA AUTÔNOMO ATIVO NA PORTA ${PORT}`);
+// --- NEXUS V2 - ORION VISION ENGINE ---
+app.post('/api/generate-v2', upload.single('image'), async (req, res) => {
+    try {
+        if (!req.file) return res.status(400).json({ success: false, error: 'Nenhuma imagem enviada.' });
+
+        const preco = req.body.preco || "Sob consulta";
+        const imagePath = req.file.path;
+        const imageBase64 = fs.readFileSync(imagePath).toString('base64');
+
+        // 1. ANÁLISE VISUAL (Módulo 1)
+        const visionPrompt = `Analise esta foto de produto. Identifique: Nome do produto, Categoria, Público provável, 3 principais benefícios visuais e a maior "dor" que ele resolve. Retorne apenas os dados estruturados.`;
+        
+        const visionResult = await callLLMVision(visionPrompt, imageBase64);
+        
+        // 2. GERAÇÃO DE COPY (Módulo 2 e 3)
+        const config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
+        const promptBase = fs.readFileSync(config.prompt_file, 'utf8');
+        
+        const finalPrompt = `
+        ${promptBase}
+        DADOS DO PRODUTO (VINDOS DA VISÃO):
+        ${visionResult}
+        PREÇO: ${preco}
+
+        GERAR OUTPUT LIMPO:
+        TÍTULO
+        DESCRIÇÃO
+        5 BULLETS
+        LEGENDA CURTA
+        CTA
+        PROMPT DE IMAGEM SIMPLIFICADO
+        `;
+
+        const copyContent = await callLLM(finalPrompt);
+
+        // Salvar no Histórico
+        const id = "NX-" + Math.floor(1000 + Math.random() * 9000);
+        const filename = `${id}.txt`;
+        fs.writeFileSync(path.join(config.output_dir, filename), copyContent);
+
+        // Limpar arquivo temporário
+        fs.unlinkSync(imagePath);
+
+        res.json({ success: true, content: copyContent, id: id });
+
+    } catch (error) {
+        console.error('ERRO V2:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
 });
+
+// Função auxiliar para Visão
+async function callLLMVision(prompt, base64Image) {
+    const config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
+    
+    return new Promise((resolve, reject) => {
+        const data = JSON.stringify({
+            contents: [{
+                parts: [
+                    { text: prompt },
+                    {
+                        inline_data: {
+                            mime_type: "image/jpeg",
+                            data: base64Image
+                        }
+                    }
+                ]
+            }]
+        });
+
+        const options = {
+            hostname: 'generativelanguage.googleapis.com',
+            path: `/v1beta/models/gemini-1.5-flash:generateContent?key=${config.api_key}`,
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        };
+
+        const req = https.request(options, (res) => {
+            let body = '';
+            res.on('data', (d) => body += d);
+            res.on('end', () => {
+                try {
+                    const json = JSON.parse(body);
+                    if (json.candidates && json.candidates[0].content.parts[0].text) {
+                        resolve(json.candidates[0].content.parts[0].text);
+                    } else {
+                        reject(new Error('Falha na análise visual.'));
+                    }
+                } catch (e) { reject(e); }
+            });
+        });
+
+        req.on('error', (e) => reject(e));
+        req.write(data);
+        req.end();
+    });
+}
+
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 NEXUS SELLER - SISTEMA AUTÔNOMO V2 ATIVO NA PORTA ${PORT}`);
+});
+

@@ -61,78 +61,155 @@ async function loadOutput(filename) {
 }
 
 /**
- * Submeter Formulário
- */
-productForm.addEventListener('submit', async (e) => {
+ * console.log("🚀 NEXUS SELLER V2 - AGENTIC VISION ACTIVE");
+
+// Elementos
+const dropZone = document.getElementById('dropZone');
+const imageInput = document.getElementById('imageInput');
+const imagePreview = document.getElementById('imagePreview');
+const uploadPrompt = document.querySelector('.upload-prompt');
+const generateBtn = document.getElementById('generateBtnV2');
+const resultDisplay = document.getElementById('resultDisplay');
+const precoInput = document.getElementById('preco');
+const historyList = document.getElementById('historyList');
+
+let selectedFile = null;
+
+// Máscara de Moeda (Melhorada)
+precoInput.addEventListener('input', (e) => {
+    let value = e.target.value.replace(/\D/g, "");
+    value = (value / 100).toLocaleString("pt-BR", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    });
+    e.target.value = value === "0,00" ? "" : "R$ " + value;
+});
+
+// Lógica de Upload
+dropZone.addEventListener('click', () => imageInput.click());
+
+imageInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) handleFile(file);
+});
+
+dropZone.addEventListener('dragover', (e) => {
     e.preventDefault();
-    
-    const formData = {
-        nome_produto: document.getElementById('nome_produto').value,
-        preco: document.getElementById('preco').value.replace(/\./g, '').replace(',', '.'),
-        canal: document.getElementById('canal').value,
+    dropZone.style.borderColor = 'var(--accent-lilac)';
+});
 
-        descricao: document.getElementById('descricao').value,
-        publico: document.getElementById('publico').value,
-        problema: document.getElementById('problema').value,
-        diferencial: document.getElementById('diferencial').value
+dropZone.addEventListener('dragleave', () => {
+    dropZone.style.borderColor = 'var(--border)';
+});
+
+dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file) handleFile(file);
+});
+
+function handleFile(file) {
+    if (!file.type.startsWith('image/')) {
+        alert("Por favor, envie uma imagem válida.");
+        return;
+    }
+    selectedFile = file;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        imagePreview.src = e.target.result;
+        imagePreview.classList.remove('hidden');
+        uploadPrompt.classList.add('hidden');
     };
+    reader.readAsDataURL(file);
+}
 
-    resultDisplay.innerHTML = '<div class="loading-spinner">✨ Criando sua estratégia... Aguarde...</div>';
+// Geração V2
+generateBtn.addEventListener('click', async () => {
+    if (!selectedFile) {
+        alert("Orion precisa de uma imagem para começar! 📸");
+        return;
+    }
+
+    setLoading(true);
+
+    const formData = new FormData();
+    formData.append('image', selectedFile);
+    formData.append('preco', precoInput.value);
 
     try {
-        const response = await fetch('/api/generate', {
+        const response = await fetch('/api/generate-v2', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(formData)
+            body: formData
         });
 
-        const result = await response.json();
-        if (result.success) {
-            resultDisplay.textContent = result.content;
-            productForm.reset();
+        const data = await response.json();
+        
+        if (data.success) {
+            renderResult(data.content);
             loadHistory();
+        } else {
+            resultDisplay.innerHTML = `<div style="color: red;">🚨 Erro do Orion: ${data.error}</div>`;
         }
-    } catch (e) {
-        resultDisplay.textContent = '❌ Erro ao gerar kit. Tente novamente.';
+    } catch (error) {
+        console.error(error);
+        resultDisplay.innerHTML = `<div style="color: red;">🚨 Falha na conexão com o Cérebro Nexus.</div>`;
+    } finally {
+        setLoading(false);
     }
 });
 
-/**
- * Botão Modo Achadinho (SPRINT CORREÇÃO)
- */
-achadinhoBtn.addEventListener('click', async () => {
-    const nome = document.getElementById('nome_produto').value;
-    if (!nome) return alert('Digite o nome do produto para o Modo Achadinho!');
-
-    const formData = {
-        nome_produto: `MODO ACHADINHO: ${nome}`,
-        preco: document.getElementById('preco').value.replace(/\./g, '').replace(',', '.'),
-        canal: 'WhatsApp',
-
-        descricao: document.getElementById('descricao').value,
-        publico: document.getElementById('publico').value,
-        problema: document.getElementById('problema').value,
-        diferencial: document.getElementById('diferencial').value
-    };
-
-    resultDisplay.innerHTML = '<div class="loading-spinner">💖 Gerando Achadinho Mágico... ✨</div>';
-
-    try {
-        const response = await fetch('/api/generate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(formData)
-        });
-
-        const result = await response.json();
-        if (result.success) {
-            resultDisplay.textContent = result.content;
-            loadHistory();
-        }
-    } catch (e) {
-        resultDisplay.textContent = '❌ Erro no Modo Achadinho.';
+function setLoading(isLoading) {
+    if (isLoading) {
+        generateBtn.disabled = true;
+        generateBtn.innerText = "SINCRONIZANDO VISÃO... 🧠⚡";
+        resultDisplay.innerHTML = `<div class="loading-container">
+            <p>📸 Analisando produto...</p>
+            <p>🎯 Identificando público...</p>
+            <p>🔥 Criando desejo...</p>
+        </div>`;
+    } else {
+        generateBtn.disabled = false;
+        generateBtn.innerText = "GERAR ESTRATÉGIA ⚡";
     }
-});
+}
+
+function renderResult(content) {
+    // Limpeza estética do output conforme padrão Orion
+    resultDisplay.innerHTML = `<div class="output-v2">${content}</div>`;
+}
+
+// Funções de Utilitário (Cópia e Histórico)
+async function loadHistory() {
+    try {
+        const res = await fetch('/api/history');
+        const data = await res.json();
+        historyList.innerHTML = data.map(item => `
+            <li class="history-item" onclick="viewHistoryItem('${item.filename}')">
+                <span class="id">${item.id}</span>
+                <span class="name">${item.name}</span>
+            </li>
+        `).join('');
+    } catch (e) { console.error("Erro ao carregar histórico", e); }
+}
+
+async function viewHistoryItem(filename) {
+    try {
+        const res = await fetch(`/api/output/${filename}`);
+        const text = await res.text();
+        renderResult(text);
+    } catch (e) { alert("Erro ao carregar item"); }
+}
+
+function copyByChannel(channel) {
+    const text = resultDisplay.innerText;
+    navigator.clipboard.writeText(text).then(() => {
+        alert(`Copy para ${channel.toUpperCase()} copiada com sucesso! 🚀`);
+    });
+}
+
+// Inicialização
+loadHistory();
+setInterval(loadHistory, 10000);
 
 
 /**
