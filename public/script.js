@@ -1,3 +1,4 @@
+console.log("🚀 SCRIPT NEXUS CARREGADO COM SUCESSO!");
 const productForm = document.getElementById('productForm');
 const achadinhoBtn = document.getElementById('achadinhoBtn');
 
