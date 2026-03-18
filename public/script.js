@@ -6,6 +6,22 @@ const historyList = document.getElementById('historyList');
 const resultDisplay = document.getElementById('resultDisplay');
 const copyBtn = document.getElementById('copyBtn');
 const metricsDisplay = document.getElementById('metricsDisplay');
+const precoInput = document.getElementById('preco');
+
+// Máscara de Moeda
+precoInput.addEventListener('input', (e) => {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value === "") {
+        e.target.value = "";
+        return;
+    }
+    value = (parseFloat(value) / 100).toLocaleString('pt-BR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+    e.target.value = value;
+});
+
 
 /**
  * Carregar Histórico
@@ -52,8 +68,9 @@ productForm.addEventListener('submit', async (e) => {
     
     const formData = {
         nome_produto: document.getElementById('nome_produto').value,
-        preco: document.getElementById('preco').value,
+        preco: document.getElementById('preco').value.replace(/\./g, '').replace(',', '.'),
         canal: document.getElementById('canal').value,
+
         descricao: document.getElementById('descricao').value,
         publico: document.getElementById('publico').value,
         problema: document.getElementById('problema').value,
@@ -89,8 +106,9 @@ achadinhoBtn.addEventListener('click', async () => {
 
     const formData = {
         nome_produto: `MODO ACHADINHO: ${nome}`,
-        preco: document.getElementById('preco').value,
+        preco: document.getElementById('preco').value.replace(/\./g, '').replace(',', '.'),
         canal: 'WhatsApp',
+
         descricao: document.getElementById('descricao').value,
         publico: document.getElementById('publico').value,
         problema: document.getElementById('problema').value,
