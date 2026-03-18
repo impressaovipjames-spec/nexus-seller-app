@@ -1,4 +1,6 @@
 const productForm = document.getElementById('productForm');
+const achadinhoBtn = document.getElementById('achadinhoBtn');
+
 const historyList = document.getElementById('historyList');
 const resultDisplay = document.getElementById('resultDisplay');
 const copyBtn = document.getElementById('copyBtn');
@@ -57,6 +59,8 @@ productForm.addEventListener('submit', async (e) => {
         diferencial: document.getElementById('diferencial').value
     };
 
+    resultDisplay.innerHTML = '<div class="loading-spinner">✨ Criando sua estratégia... Aguarde...</div>';
+
     try {
         const response = await fetch('/api/generate', {
             method: 'POST',
@@ -66,16 +70,51 @@ productForm.addEventListener('submit', async (e) => {
 
         const result = await response.json();
         if (result.success) {
-            resultDisplay.textContent = "🚀 Processando seu kit... Aguarde 5 segundos e atualize o histórico.";
+            resultDisplay.textContent = result.content;
             productForm.reset();
-            
-            // Auto refresh histórico após 6 segundos
-            setTimeout(loadHistory, 6000);
+            loadHistory();
         }
     } catch (e) {
-        alert('Falha ao enviar produto');
+        resultDisplay.textContent = '❌ Erro ao gerar kit. Tente novamente.';
     }
 });
+
+/**
+ * Botão Modo Achadinho (SPRINT CORREÇÃO)
+ */
+achadinhoBtn.addEventListener('click', async () => {
+    const nome = document.getElementById('nome_produto').value;
+    if (!nome) return alert('Digite o nome do produto para o Modo Achadinho!');
+
+    const formData = {
+        nome_produto: `MODO ACHADINHO: ${nome}`,
+        preco: document.getElementById('preco').value,
+        canal: 'WhatsApp',
+        descricao: document.getElementById('descricao').value,
+        publico: document.getElementById('publico').value,
+        problema: document.getElementById('problema').value,
+        diferencial: document.getElementById('diferencial').value
+    };
+
+    resultDisplay.innerHTML = '<div class="loading-spinner">💖 Gerando Achadinho Mágico... ✨</div>';
+
+    try {
+        const response = await fetch('/api/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData)
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            resultDisplay.textContent = result.content;
+            loadHistory();
+        }
+    } catch (e) {
+        resultDisplay.textContent = '❌ Erro no Modo Achadinho.';
+    }
+});
+
 
 /**
  * Copiar Conteúdo
