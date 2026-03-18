@@ -1,0 +1,13 @@
+{
+  "api_key": "YOUR_API_KEY_HERE",
+  "model": "gemini-1.5-pro",
+  "input_dir": "./input",
+  "output_dir": "./output",
+  "processing_dir": "./processando",
+  "processed_dir": "./processados",
+  "prompt_file": "./prompts/nexus_prompt.txt",
+  "template_file": "./templates/output_template.txt",
+  "last_id": 7,
+  "loop_interval_ms": 5000,
+  "port": 8080
+}

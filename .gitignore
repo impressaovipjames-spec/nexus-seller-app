@@ -5,6 +5,5 @@ output/
 processados/
 processando/
 .env
-config.json
 metrics/metrics.json
 package-lock.json
