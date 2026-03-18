@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Achadinhos da Taty - Inteligência de Vendas</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="logo">
+                <img src="logo.png" alt="Achadinhos da Taty Logo">
+                <p>Curadoria Inteligente</p>
+            </div>
+            <div class="history-section">
+                <h3>HISTÓRICO</h3>
+                <ul id="historyList">
+                    <!-- Itens via JS -->
+                </ul>
+            </div>
+
+        </aside>
+
+        <main class="content">
+            <header>
+                <h2>Achadinhos Intelligence ✨</h2>
+                <nav class="tabs">
+                    <button class="tab-btn active" onclick="switchTab('generator')">MOTOR ⚡</button>
+                    <button class="tab-btn" onclick="switchTab('dashboard')">ESTATÍSTICAS 📊</button>
+                </nav>
+                <div class="status-badge" id="appStatus">Sistema Online</div>
+            </header>
+
+            <section id="generatorTab" class="tab-content active">
+                <div class="main-grid">
+                <section class="form-card">
+                    <form id="productForm">
+                        <div class="input-group">
+                            <label>Nome do Produto</label>
+                            <input type="text" id="nome_produto" placeholder="Ex: Nexus Coffee" required>
+                        </div>
+                        <div class="input-row">
+                            <div class="input-group">
+                                <label>Preço (R$)</label>
+                                <input type="number" id="preco" placeholder="99.90" step="0.01">
+                            </div>
+                            <div class="input-group">
+                                <label>Canal</label>
+                                <select id="canal">
+                                    <option value="Instagram/TikTok">Instagram / TikTok</option>
+                                    <option value="Shopee">Shopee / Marketplace</option>
+                                    <option value="WhatsApp">WhatsApp</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>Descrição Curta</label>
+                            <textarea id="descricao" placeholder="O que o produto faz?"></textarea>
+                        </div>
+                        <div class="input-group">
+                            <label>Público Alvo</label>
+                            <input type="text" id="publico" placeholder="Ex: Empreendedores">
+                        </div>
+                        <div class="input-group">
+                            <label>Problema que Resolve</label>
+                            <input type="text" id="problema" placeholder="Qual a dor do cliente?">
+                        </div>
+                        <div class="input-group">
+                            <label>Diferencial Visual</label>
+                            <input type="text" id="diferencial" placeholder="O que se destaca?">
+                        </div>
+                        <div class="btn-group">
+                            <button type="submit" id="generateBtn">Gerar Kit A/B 🚀✨</button>
+                            <button type="button" id="achadinhoBtn" class="btn-secondary">Modo Achadinho ✨💖</button>
+                        </div>
+                    </form>
+                </section>
+
+                <section class="result-card">
+                    <div class="result-header">
+                        <h3>SAÍDA ESTRUTURADA</h3>
+                        <div class="copy-options">
+                            <button class="copy-sub btn-shopee" onclick="copyByChannel('shopee')">SHOPEE</button>
+                            <button class="copy-sub btn-instagram" onclick="copyByChannel('instagram')">INSTAGRAM</button>
+                            <button class="copy-sub btn-whatsapp" onclick="copyByChannel('whatsapp')">WHATSAPP</button>
+                            <button id="copyBtn">TUDO</button>
+                        </div>
+                    </div>
+                    <div class="result-content" id="resultDisplay">
+                        <div class="placeholder-msg">Preencha o formulário para visualizar o kit aqui.</div>
+                    </div>
+                </section>
+                </div>
+            </section>
+
+            <section id="dashboardTab" class="tab-content">
+                <div class="dashboard-header">
+                    <h3>🏆 PRODUTOS CAMPEÕES</h3>
+                    <div class="dashboard-actions">
+                        <button class="copy-sub" id="filterChampions" onclick="toggleChampions()">FILTRAR CAMPEÕES ⭐</button>
+                        <button class="copy-sub" onclick="loadDashboard()">ATUALIZAR 🔄</button>
+                    </div>
+                </div>
+                <div id="metricsDisplay">
+                    <div class="placeholder-msg">Carregando performance...</div>
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    <footer class="main-footer">
+        NEXUS SELLER - DESENVOLVIDO POR VIPNEXUS IA - TODOS OS DIREITOS RESERVADOS - MARÇO 2026
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
