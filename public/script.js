@@ -252,16 +252,28 @@ async function generateAndDisplayImage(prompt) {
             body: JSON.stringify({ prompt: prompt })
         });
 
-        if (!response.ok) throw new Error("Falha no Proxy");
+        if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(errData.error || "Erro no Servidor Proxy");
+        }
 
+        const contentType = response.headers.get("content-type");
         const blob = await response.blob();
+
+        console.log(`🎨 Blob Recebido: Size=${blob.size} Type=${contentType}`);
+
+        if (blob.size < 1000 || !contentType.includes("image")) {
+            throw new Error("O servidor não retornou uma imagem válida.");
+        }
+
         if (currentImageBlobUrl) URL.revokeObjectURL(currentImageBlobUrl);
         currentImageBlobUrl = URL.createObjectURL(blob);
 
-        container.innerHTML = `<img src="${currentImageBlobUrl}" alt="Criativo" class="generated-image">`;
+        container.innerHTML = `<img src="${currentImageBlobUrl}" alt="Criativo" class="generated-image" onerror="this.parentElement.innerHTML='<p class=\'error-msg\'>Erro ao carregar preview local.</p>'">`;
         actions.style.display = 'flex';
     } catch (e) {
-        container.innerHTML = `<p class="error-msg">⚠️ Erro ao renderizar imagem. Tente novamente.</p>`;
+        console.error("❌ Erro de Renderização:", e);
+        container.innerHTML = `<p class="error-msg">⚠️ ${e.message}</p>`;
     }
 }
 
