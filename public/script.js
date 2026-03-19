@@ -13,6 +13,20 @@ const uploadPrompt = document.querySelector('.upload-prompt');
 const generateBtn = document.getElementById('generateBtnV2');
 const resultDisplay = document.getElementById('resultDisplay');
 const precoInput = document.getElementById('preco');
+
+// ===============================
+// 🔒 SAFE TEXT (BLINDAGEM TOTAL)
+// ===============================
+function safeText(value, fallback = "") {
+  if (value === null || value === undefined) return fallback;
+  const text = String(value).trim();
+  if (!text) return fallback;
+  const invalid = ["undefined", "null", "nan", "n/a"];
+  if (invalid.includes(text.toLowerCase())) return fallback;
+  return text;
+}
+
+const FALLBACK_VISUAL_PROMPT = "fashion product, women sandals, ecommerce, clean background, premium lighting, realistic, high quality";
 const historyList = document.getElementById('historyList');
 const metricsDisplay = document.getElementById('metricsDisplay');
 const removeImageBtn = document.getElementById('removeImage');
@@ -164,24 +178,102 @@ function setLoading(isLoading) {
     }
 }
 
-function renderResult(content, imageUri = null) {
-    let html = '';
-    if (imageUri) {
-        // Garantir URL do Pollinations para render interno
-        const cleanImageUri = imageUri.includes('pollinations.ai') ? imageUri : `https://image.pollinations.ai/prompt/${encodeURIComponent(imageUri)}?width=1080&height=1080&model=flux`;
-        
-        html += `
-            <div class="creative-output">
-                <h3>🖼️ CRIATIVO GERADO (ORION 3.0)</h3>
-                <img src="${cleanImageUri}" alt="Criativo Gerado" class="generated-image">
-                <button onclick="downloadImage('${cleanImageUri}')" class="download-btn">BAIXAR CRIATIVO 📥</button>
-            </div>
-        `;
+function renderResult(data) {
+    if (!data || typeof data !== 'object') {
+        resultDisplay.innerHTML = `<div class="error-msg">Erro ao processar estratégia. Orion em standby.</div>`;
+        return;
     }
-    // Formatar quebras de linha para exibição HTML se necessário, ou manter pre-wrap via CSS
-    html += `<div class="output-v2">${content.replace(/\n/g, '<br>')}</div>`;
+
+    const { titulo, descricao, bullets, cta, legenda, fraseViral, visualPrompt } = data;
+    
+    let html = '';
+    
+    // Header do Criativo
+    html += `
+        <div class="creative-output">
+            <h3>🖼️ CRIATIVO GERADO (ORION 3.0)</h3>
+            <div id="imageContainer" class="image-preview-placeholder">
+                <p>Gerando composição visual...</p>
+            </div>
+            <div class="action-row" id="imageActions" style="display: none;">
+                <button onclick="downloadCurrentCreative()" class="download-btn">BAIXAR CRIATIVO 📥</button>
+            </div>
+        </div>
+    `;
+
+    // Conteúdo Estratégico Limpo
+    html += `
+        <div class="output-clean">
+            <h2 class="copy-title">${safeText(titulo)}</h2>
+            <p class="copy-desc">${safeText(descricao)}</p>
+            
+            <div class="copy-section">
+                <strong>💎 BENEFÍCIOS CHAVE:</strong>
+                <ul class="copy-bullets">
+                    ${(bullets || []).map(b => `<li>${safeText(b)}</li>`).join('')}
+                </ul>
+            </div>
+
+            <div class="copy-section">
+                <strong>🎯 CHAMADA PARA AÇÃO (CTA):</strong>
+                <p class="copy-cta">${safeText(cta)}</p>
+            </div>
+
+            <div class="copy-section">
+                <strong>📱 LEGENDA SUGERIDA:</strong>
+                <p class="copy-caption">${safeText(legenda)}</p>
+            </div>
+
+            <div class="copy-section">
+                <strong>🔥 FRASE VIRAL:</strong>
+                <p class="copy-viral">${safeText(fraseViral)}</p>
+            </div>
+        </div>
+    `;
+
     resultDisplay.innerHTML = html;
+
+    // Disparar geração de imagem via Proxy se houver prompt
+    if (visualPrompt) {
+        generateAndDisplayImage(visualPrompt);
+    }
 }
+
+let currentImageBlobUrl = null;
+
+async function generateAndDisplayImage(prompt) {
+    const container = document.getElementById('imageContainer');
+    const actions = document.getElementById('imageActions');
+    
+    try {
+        const response = await fetch('/api/generate-image', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: prompt })
+        });
+
+        if (!response.ok) throw new Error("Falha no Proxy");
+
+        const blob = await response.blob();
+        if (currentImageBlobUrl) URL.revokeObjectURL(currentImageBlobUrl);
+        currentImageBlobUrl = URL.createObjectURL(blob);
+
+        container.innerHTML = `<img src="${currentImageBlobUrl}" alt="Criativo" class="generated-image">`;
+        actions.style.display = 'flex';
+    } catch (e) {
+        container.innerHTML = `<p class="error-msg">⚠️ Erro ao renderizar imagem. Tente novamente.</p>`;
+    }
+}
+
+window.downloadCurrentCreative = () => {
+    if (!currentImageBlobUrl) return;
+    const link = document.createElement('a');
+    link.href = currentImageBlobUrl;
+    link.download = `criativo_nexus_${Date.now()}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+};
 
 /**
  * 5. HISTÓRICO E MÉTRICAS

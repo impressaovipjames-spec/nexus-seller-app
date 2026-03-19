@@ -21,11 +21,31 @@ const PORT = process.env.PORT || config.port || 8080;
 console.log(`🔥 SERVER ATIVO NA PORTA ${PORT}`);
 
 const https = require('https');
+const axios = require('axios'); // Para facilitar o fetch de imagem
 
 // Configurações
 app.use(cors());
-app.use(bodyParser.json());
+app.use(bodyParser.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
+
+// --- ROTA PROXY DE IMAGEM (ORION PATCH) ---
+app.post("/api/generate-image", async (req, res) => {
+  try {
+    const rawPrompt = req.body?.prompt || FALLBACK_VISUAL_PROMPT;
+    const prompt = String(rawPrompt).replace(/\s+/g, " ").trim().slice(0, 600);
+    const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1080&height=1080&model=flux&nologo=true`;
+
+    const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+    const contentType = response.headers["content-type"] || "image/png";
+    
+    res.setHeader("Content-Type", contentType);
+    res.setHeader("Content-Disposition", 'inline; filename="criativo-nexus.png"');
+    return res.send(Buffer.from(response.data));
+  } catch (error) {
+    console.error("[generate-image] erro:", error);
+    return res.status(500).json({ ok: false, error: "Falha ao gerar criativo." });
+  }
+});
 
 const inputDir = path.resolve(__dirname, config.input_dir);
 const outputDir = path.resolve(__dirname, config.output_dir);
@@ -158,6 +178,34 @@ async function callSolaris(systemPrompt, userPrompt) {
         });
     }
     return "produto em destaque, fundo limpo, estilo profissional";
+}
+
+// ===============================
+// 🔒 SAFE TEXT (BLINDAGEM TOTAL)
+// ===============================
+function safeText(value, fallback = "") {
+  if (value === null || value === undefined) return fallback;
+  const text = String(value).trim();
+  if (!text) return fallback;
+  const invalid = ["undefined", "null", "nan", "n/a"];
+  if (invalid.includes(text.toLowerCase())) return fallback;
+  return text;
+}
+
+const FALLBACK_VISUAL_PROMPT = "fashion product, women sandals, ecommerce, clean background, premium lighting, realistic, high quality";
+
+function cleanPublicCopy(data = {}) {
+  return {
+    titulo: safeText(data.titulo, "Sandália feminina confortável e estilosa"),
+    descricao: safeText(data.descricao, "Perfeita para o dia a dia, combinando conforto e estilo em qualquer ocasião."),
+    bullets: Array.isArray(data.bullets) 
+        ? data.bullets.map(b => safeText(b)).filter(Boolean).slice(0, 3) 
+        : ["Conforto para uso diário", "Combina com diversos looks", "Leve e prática"],
+    cta: safeText(data.cta, "Garanta a sua agora."),
+    legenda: safeText(data.legenda, "Modelo confortável e versátil para qualquer momento."),
+    fraseViral: safeText(data.fraseViral, "Todo mundo está usando essa sandália!"),
+    visualPrompt: safeText(data.visualPrompt, FALLBACK_VISUAL_PROMPT)
+  };
 }
 
 function parseResponseToTemplate(rawResponse, template) {
@@ -425,20 +473,60 @@ app.post('/api/generate-v2', upload.single('image'), async (req, res) => {
         const copyContent = await callLLM(finalPrompt, { nome_produto: "NEXUS PRODUCT", preco: preco });
         console.log("✅ Geração de Copy Concluída.");
 
-        // Salvar no Histórico
+        // --- SANEAMENTO FINAL (OUTPUT LIMPO) ---
+        const rawFinalData = {
+            titulo: lexionResult.match(/TÍTULO: (.*)/i)?.[1],
+            descricao: lexionResult.match(/DESCRIÇÃO: (.*)/i)?.[1],
+            cta: lexionResult.match(/CTA: (.*)/i)?.[1],
+            legenda: lexionResult.match(/LEGENDA: (.*)/i)?.[1],
+            fraseViral: lexionResult.match(/FRASE VIRAL: (.*)/i)?.[1],
+            bullets: lexionResult.match(/3 BULLETS RÁPIDOS: (.*)/i)?.[1]?.split(',').map(b => b.trim()),
+            visualPrompt: promptVisual
+        };
+
+        const finalizedCopy = cleanPublicCopy(rawFinalData);
+
+        // Salvar métricas e histórico (Mantendo o original para logs internos se necessário)
+        const metrics = JSON.parse(fs.readFileSync(metricsPath, 'utf8'));
+        metrics.total_gerações = (metrics.total_gerações || 0) + 1;
+        fs.writeFileSync(metricsPath, JSON.stringify(metrics, null, 2));
+
         const id = "NX-" + Math.floor(1000 + Math.random() * 9000);
         const filename = `${id}.txt`;
-        fs.writeFileSync(path.join(outputDir, filename), copyContent);
+        fs.writeFileSync(path.join(outputDir, filename), JSON.stringify(finalizedCopy, null, 2)); // Salva o objeto saneado
 
         res.json({ 
             success: true, 
-            content: copyContent, 
+            id: id,
+            content: finalizedCopy, // Objeto saneado
             imagem: imagemGeradaUrl,
-            id: id 
+            visualPrompt: finalizedCopy.visualPrompt
         });
 
     } catch (error) {
         console.error('🔥 FALHA NO PIPELINE ORION V2:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Endpoint para gerar imagem diretamente (sem pipeline completo)
+app.post('/api/generate-image', async (req, res) => {
+    try {
+        const { prompt } = req.body;
+        if (!prompt) {
+            return res.status(400).json({ success: false, error: 'Prompt visual é obrigatório.' });
+        }
+
+        console.log("🎨 Gerando Criativo via Pollinations (direto)...");
+        const seed = Math.floor(Math.random() * 999999);
+        const encodedPrompt = encodeURIComponent(prompt);
+        const imageUrl = `https://pollinations.ai/p/${encodedPrompt}?width=1080&height=1080&model=flux&seed=${seed}`;
+        console.log("✅ Imagem Gerada (URL Pronta).");
+
+        res.json({ success: true, imageUrl: imageUrl });
+
+    } catch (error) {
+        console.error('🔥 FALHA NA GERAÇÃO DE IMAGEM DIRETA:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
