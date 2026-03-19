@@ -305,9 +305,28 @@ app.post('/api/generate-v2', upload.single('image'), async (req, res) => {
         // ESTÁGIO 2: LEXION (Engenharia de Prompt de Venda)
         console.log("📡 Ativando LEXION (Diretor de Criação)...");
         const lexionFullManual = fs.readFileSync(path.join(__dirname, 'prompts', 'lexion_full.txt'), 'utf8');
-        const lexionInput = `ANÁLISE DO ARKHEON:\n${arkheonResult}\nPREÇO: ${preco}`;
-        const lexionResult = await callLexion(lexionFullManual, lexionInput);
-        console.log("✅ LEXION Concluído.");
+        
+        // --- BLINDAGEM LEXION (OBRIGATÓRIO) ---
+        let inputLexion = arkheonResult;
+        if (!inputLexion || (typeof inputLexion === "string" && inputLexion.trim().length === 0)) {
+            inputLexion = "Produto detectado, mas scan visual falhou. Gere estratégia de mercado genérica de alta conversão.";
+        }
+        if (typeof inputLexion !== "string") {
+            inputLexion = JSON.stringify(inputLexion);
+        }
+        console.log("📂 Entrada Lexion:", inputLexion);
+
+        const lexionInput = `ANÁLISE DO ARKHEON:\n${inputLexion}\nPREÇO: ${preco}`;
+        
+        let lexionResult;
+        try {
+            lexionResult = await callLexion(lexionFullManual, lexionInput);
+            console.log("✅ LEXION Concluído.");
+        } catch (lexionError) {
+            console.error("🚨 FALHA NO LEXION:", lexionError);
+            lexionResult = "PROMPT FINAL: Gere uma copy de vendas persuasiva para o produto, focando em benefícios claros e CTA forte.";
+        }
+        // --- FIM BLINDAGEM LEXION ---
 
         // ESTÁGIO 3: SOLARIS (Direção de Arte)
         console.log("📡 Ativando SOLARIS (Direção de Arte)...");
@@ -426,5 +445,6 @@ function getGeminiOptions(model) {
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 NEXUS SELLER V2 - PIPELINE ORION ATIVO NA PORTA ${PORT}`);
 });
+
 
 
