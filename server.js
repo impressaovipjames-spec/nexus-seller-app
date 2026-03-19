@@ -531,14 +531,14 @@ app.post('/api/generate-v2', upload.single('image'), async (req, res) => {
         const copyContent = await callLLM(finalPrompt, { nome_produto: "NEXUS PRODUCT", preco: preco });
         console.log("✅ Geração de Copy Concluída.");
 
-        // --- SANEAMENTO FINAL (OUTPUT LIMPO) ---
+        // --- SANEAMENTO FINAL (OUTPUT LIMPO E DENSO) ---
         const rawFinalData = {
-            titulo: lexionResult.match(/TÍTULO: (.*)/i)?.[1],
-            descricao: lexionResult.match(/DESCRIÇÃO: (.*)/i)?.[1],
-            cta: lexionResult.match(/CTA: (.*)/i)?.[1],
-            legenda: lexionResult.match(/LEGENDA: (.*)/i)?.[1],
-            fraseViral: lexionResult.match(/FRASE VIRAL: (.*)/i)?.[1],
-            bullets: lexionResult.match(/3 BULLETS RÁPIDOS: (.*)/i)?.[1]?.split(',').map(b => b.trim()),
+            titulo: lexionResult.match(/TÍTULO: ([\s\S]*?)(?=\n[A-Z]|$)/i)?.[1]?.trim(),
+            descricao: lexionResult.match(/DESCRIÇÃO: ([\s\S]*?)(?=\n[A-Z]|$)/i)?.[1]?.trim(),
+            cta: lexionResult.match(/CTA: ([\s\S]*?)(?=\n[A-Z]|$)/i)?.[1]?.trim(),
+            legenda: lexionResult.match(/LEGENDA: ([\s\S]*?)(?=\n[A-Z]|$)/i)?.[1]?.trim(),
+            fraseViral: lexionResult.match(/FRASE VIRAL: ([\s\S]*?)(?=\n[A-Z]|$)/i)?.[1]?.trim(),
+            bullets: lexionResult.match(/3 BULLETS RÁPIDOS: ([\s\S]*?)(?=\n[A-Z]|$)/i)?.[1]?.split('\n').map(b => b.replace(/^[-•*]\s*/, '').trim()).filter(Boolean),
             visualPrompt: promptVisual
         };
 
