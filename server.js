@@ -262,107 +262,120 @@ app.get('/health', (req, res) => {
     res.send('OK - NEXUS IS ALIVE');
 });
 
-// --- NEXUS V2 - ORION VISION ENGINE ---
+// --- NEXUS V2 - PIPELINE ARKHEON + LEXION + GEMINI ---
 app.post('/api/generate-v2', upload.single('image'), async (req, res) => {
+    let imagePath = null;
     try {
-        if (!req.file) return res.status(400).json({ success: false, error: 'Nenhuma imagem enviada.' });
+        if (!req.file) return res.status(400).json({ success: false, error: 'O Orion precisa da foto do produto para o Arkheon escanear.' });
 
         const preco = req.body.preco || "Sob consulta";
-        const imagePath = req.file.path;
+        imagePath = req.file.path;
         const imageBase64 = fs.readFileSync(imagePath).toString('base64');
 
-        // 1. ANÁLISE VISUAL (Módulo 1)
-        const visionPrompt = `Analise esta foto de produto. Identifique: Nome do produto, Categoria, Público provável, 3 principais benefícios visuais e a maior "dor" que ele resolve. Retorne apenas os dados estruturados.`;
-        
-        const visionResult = await callLLMVision(visionPrompt, imageBase64);
-        
-        // 2. GERAÇÃO DE COPY (Módulo 2 e 3)
-        const config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
-        const promptBase = fs.readFileSync(config.prompt_file, 'utf8');
-        
-        const finalPrompt = `
-        ${promptBase}
-        DADOS DO PRODUTO (VINDOS DA VISÃO):
-        ${visionResult}
-        PREÇO: ${preco}
+        // ESTÁGIO 1: ARKHEON (Scanner de Dor)
+        console.log("📡 Ativando ARKHEON...");
+        const arkheonPromptBase = fs.readFileSync(path.join(__dirname, 'prompts', 'arkheon.txt'), 'utf8');
+        const arkheonResult = await callArkheon(arkheonPromptBase, imageBase64);
+        console.log("✅ ARKHEON Concluído.");
 
-        GERAR OUTPUT LIMPO:
-        TÍTULO
-        DESCRIÇÃO
-        5 BULLETS
-        LEGENDA CURTA
-        CTA
-        PROMPT DE IMAGEM SIMPLIFICADO
-        `;
+        // ESTÁGIO 2: LEXION (Engenharia de Prompt)
+        console.log("📡 Ativando LEXION...");
+        const lexionPromptBase = fs.readFileSync(path.join(__dirname, 'prompts', 'lexion.txt'), 'utf8');
+        const lexionInput = `DADOS ESTRATÉGICOS DO ARKHEON:\n${arkheonResult}\nPREÇO: ${preco}`;
+        const lexionResult = await callLexion(lexionPromptBase, lexionInput);
+        console.log("✅ LEXION Concluído.");
 
-        const copyContent = await callLLM(finalPrompt);
+        // ESTÁGIO 3: GEMINI (Execução Final)
+        console.log("📡 Ativando GEMINI (Execução Final)...");
+        // O Lexion gera o "PROMPT FINAL: ...", precisamos extrair o conteúdo após esse marcador
+        const finalPromptMatch = lexionResult.match(/PROMPT FINAL:([\s\S]*)/i);
+        const finalPrompt = finalPromptMatch ? finalPromptMatch[1].trim() : lexionResult;
+        
+        const copyContent = await callLLM(finalPrompt, { nome_produto: "PRODUTO V2", preco: preco });
+        console.log("✅ Geração Final Concluída.");
 
         // Salvar no Histórico
         const id = "NX-" + Math.floor(1000 + Math.random() * 9000);
         const filename = `${id}.txt`;
-        fs.writeFileSync(path.join(config.output_dir, filename), copyContent);
+        fs.writeFileSync(path.join(outputDir, filename), copyContent);
 
         // Limpar arquivo temporário
-        fs.unlinkSync(imagePath);
+        if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
 
         res.json({ success: true, content: copyContent, id: id });
 
     } catch (error) {
-        console.error('ERRO V2:', error);
+        console.error('🔥 FALHA NO PIPELINE ORION V2:', error);
+        if (imagePath && fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
         res.status(500).json({ success: false, error: error.message });
     }
 });
 
-// Função auxiliar para Visão
-async function callLLMVision(prompt, base64Image) {
-    const config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
-    
+// Funções Auxiliares do Pipeline
+async function callArkheon(prompt, base64Image) {
     return new Promise((resolve, reject) => {
         const data = JSON.stringify({
             contents: [{
                 parts: [
                     { text: prompt },
-                    {
-                        inline_data: {
-                            mime_type: "image/jpeg",
-                            data: base64Image
-                        }
-                    }
+                    { inline_data: { mime_type: "image/jpeg", data: base64Image } }
                 ]
             }]
         });
-
-        const options = {
-            hostname: 'generativelanguage.googleapis.com',
-            path: `/v1beta/models/gemini-1.5-flash:generateContent?key=${config.api_key}`,
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        };
-
+        const options = getGeminiOptions('gemini-1.5-flash');
         const req = https.request(options, (res) => {
             let body = '';
             res.on('data', (d) => body += d);
             res.on('end', () => {
                 try {
                     const json = JSON.parse(body);
-                    if (json.candidates && json.candidates[0].content.parts[0].text) {
+                    if (json.candidates && json.candidates[0].content) {
                         resolve(json.candidates[0].content.parts[0].text);
-                    } else {
-                        reject(new Error('Falha na análise visual.'));
-                    }
+                    } else { reject(new Error('Arkheon falhou no scan.')); }
                 } catch (e) { reject(e); }
             });
         });
-
-        req.on('error', (e) => reject(e));
+        req.on('error', reject);
         req.write(data);
         req.end();
     });
 }
 
+async function callLexion(systemPrompt, inputData) {
+    const fullPrompt = `${systemPrompt}\n\nINPUT PARA ESTRUTURAÇÃO:\n${inputData}`;
+    return new Promise((resolve, reject) => {
+        const data = JSON.stringify({ contents: [{ parts: [{ text: fullPrompt }] }] });
+        const options = getGeminiOptions('gemini-1.5-flash');
+        const req = https.request(options, (res) => {
+            let body = '';
+            res.on('data', (d) => body += d);
+            res.on('end', () => {
+                try {
+                    const json = JSON.parse(body);
+                    if (json.candidates && json.candidates[0].content) {
+                        resolve(json.candidates[0].content.parts[0].text);
+                    } else { reject(new Error('Lexion falhou na estruturação.')); }
+                } catch (e) { reject(e); }
+            });
+        });
+        req.on('error', reject);
+        req.write(data);
+        req.end();
+    });
+}
+
+function getGeminiOptions(model) {
+    const config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
+    return {
+        hostname: 'generativelanguage.googleapis.com',
+        path: `/v1beta/models/${model}:generateContent?key=${config.api_key}`,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    };
+}
+
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 NEXUS SELLER - SISTEMA AUTÔNOMO V2 ATIVO NA PORTA ${PORT}`);
+    console.log(`🚀 NEXUS SELLER V2 - PIPELINE ORION ATIVO NA PORTA ${PORT}`);
 });
+
 
