@@ -339,6 +339,7 @@ app.post('/api/generate-v2', upload.single('image'), async (req, res) => {
         const lexionFullManual = fs.readFileSync(path.join(__dirname, 'prompts', 'lexion_full.txt'), 'utf8');
         
         // --- BLINDAGEM TRIPLA LEXION (REGRA ABSOLUTA ORION) ---
+        let lexionResult; // Declarar Variável Antes
         // 1. FORÇAR FALLBACK PRÉ-AÇÃO
         let entradaLexion = arkheonResult;
         if (!entradaLexion || (typeof entradaLexion === "string" && entradaLexion.trim().length === 0)) {
@@ -352,20 +353,21 @@ app.post('/api/generate-v2', upload.single('image'), async (req, res) => {
 
         const lexionInput = `ANÁLISE DO ARKHEON:\n${entradaLexion}\nPREÇO: ${preco}`;
         
-        let promptFinal;
         try {
             // 3. TRY/CATCH FORÇADO
-            promptFinal = await callLexion(lexionFullManual, lexionInput);
+            lexionResult = await callLexion(lexionFullManual, lexionInput);
             console.log("✅ LEXION Concluído.");
         } catch (error) {
             console.error("🚨 Erro Lexion:", error);
-            promptFinal = "Gerar copy simples de produto com base em contexto genérico";
+            lexionResult = "Gerar copy simples de produto com base em contexto genérico";
         }
 
         // 4. GARANTIA FINAL (NUNCA QUEBRAR PIPELINE)
-        if (!promptFinal) {
-            promptFinal = "Gerar copy simples de produto com base em contexto genérico";
+        if (!lexionResult) {
+            lexionResult = "Gerar copy simples de produto com base em contexto genérico";
         }
+        // 5. LOG DE SEGURANÇA
+        console.log("📄 Saída Lexion:", lexionResult);
         // --- FIM BLINDAGEM TRIPLA ---
 
         // ESTÁGIO 3: SOLARIS (Direção de Arte)
@@ -374,7 +376,7 @@ app.post('/api/generate-v2', upload.single('image'), async (req, res) => {
         
         // --- BLINDAGEM TRIPLA SOLARIS (REGRA ABSOLUTA ORION) ---
         // 1. FORÇAR FALLBACK PRÉ-AÇÃO
-        let entradaSolaris = promptFinal;
+        let entradaSolaris = lexionResult;
         if (!entradaSolaris) {
             entradaSolaris = "produto em destaque, fundo limpo, iluminação suave";
         }
