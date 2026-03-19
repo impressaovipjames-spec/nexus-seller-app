@@ -285,48 +285,65 @@ app.post('/api/generate-v2', upload.single('image'), async (req, res) => {
         Analise a imagem fornecida. 
         Execute o MÓDULO 1: SCAN DE DORES (PROCESSO COMPLETO).
         Entregue a SAÍDA PADRÃO: PRODUTO, CATEGORIA, PÚBLICO, DOR, DESEJO, GANHO EMOCIONAL.
-        Identifique a OPORTUNIDADE PRINCIPAL e PRÓXIMO PASSO SUGERIDO.
-        Use o Protocolo AAH se houver incertezas.
         `;
 
         const arkheonResult = await callArkheon(harkheonSystemContext, imageBase64);
         console.log("✅ HARKHEON Concluído.");
 
-        // ESTÁGIO 2: LEXION (Engenharia de Prompt)
+        // ESTÁGIO 2: LEXION (Engenharia de Prompt de Venda)
         console.log("📡 Ativando LEXION (Diretor de Criação)...");
         const lexionFullManual = fs.readFileSync(path.join(__dirname, 'prompts', 'lexion_full.txt'), 'utf8');
-        
-        const lexionSystemContext = `
-        ${lexionFullManual}
-        
-        MISSÃO ATUAL:
-        Transformar a análise do ARKHEON em um PROMPT FINAL de alta conversão.
-        Siga os templates da Parte 2 (VÍDEO, IMAGEM, CRIAÇÃO) para compor a instrução para o GEMINI.
-        O prompt final deve solicitar Título, Descrição, 5 Bullets, Legenda e CTA.
-        `;
-
         const lexionInput = `ANÁLISE DO ARKHEON:\n${arkheonResult}\nPREÇO: ${preco}`;
-        const lexionResult = await callLexion(lexionSystemContext, lexionInput);
+        const lexionResult = await callLexion(lexionFullManual, lexionInput);
         console.log("✅ LEXION Concluído.");
 
-        // ESTÁGIO 3: GEMINI (Execução Final)
+        // ESTÁGIO 3: SOLARIS (Direção de Arte)
+        console.log("📡 Ativando SOLARIS (Direção de Arte)...");
+        const solarisFullManual = fs.readFileSync(path.join(__dirname, 'prompts', 'solaris_full.txt'), 'utf8');
+        const solarisInput = `ANÁLISE DO ARKHEON:\n${arkheonResult}`;
+        const solarisResult = await callLexion(solarisFullManual, solarisInput); // Usamos a mesma função de prompt genérico
+        console.log("✅ SOLARIS Concluído.");
+
+        // Extrair o Prompt Visual do Solaris
+        const promptVisualMatch = solarisResult.match(/PROMPT VISUAL:([\s\S]*)/i) || solarisResult.match(/DALL·E ENGINEER:([\s\S]*)/i);
+        const promptVisual = promptVisualMatch ? promptVisualMatch[1].trim() : solarisResult;
+
+        // ESTÁGIO 4: POLLINATIONS (Geração de Imagem - FAIL-SAFE)
+        let imagemGeradaUrl = null;
+        try {
+            console.log("🎨 Gerando Criativo via Pollinations...");
+            const seed = Math.floor(Math.random() * 999999);
+            const encodedPrompt = encodeURIComponent(promptVisual);
+            // Validamos a URL (como é uma URL direta, o "fail-safe" aqui é garantir que o prompt foi gerado)
+            imagemGeradaUrl = `https://pollinations.ai/p/${encodedPrompt}?width=1080&height=1080&model=flux&seed=${seed}`;
+            console.log("✅ Imagem Gerada (URL Pronta).");
+        } catch (imageError) {
+            console.log("⚠️ Falha na geração de imagem (SOLARIS/POLLINATIONS) — seguindo apenas com copy.");
+            imagemGeradaUrl = null;
+        }
+
+        // ESTÁGIO 5: GEMINI (Execução Final da Copy)
         console.log("📡 Ativando GEMINI (Execução Final)...");
-        // O Lexion gera o "PROMPT FINAL: ...", precisamos extrair o conteúdo após esse marcador
         const finalPromptMatch = lexionResult.match(/PROMPT FINAL:([\s\S]*)/i);
         const finalPrompt = finalPromptMatch ? finalPromptMatch[1].trim() : lexionResult;
         
-        const copyContent = await callLLM(finalPrompt, { nome_produto: "PRODUTO V2", preco: preco });
-        console.log("✅ Geração Final Concluída.");
+        const copyContent = await callLLM(finalPrompt, { nome_produto: "NEXUS PRODUCT", preco: preco });
+        console.log("✅ Geração de Copy Concluída.");
 
         // Salvar no Histórico
         const id = "NX-" + Math.floor(1000 + Math.random() * 9000);
         const filename = `${id}.txt`;
         fs.writeFileSync(path.join(outputDir, filename), copyContent);
 
-        // Limpar arquivo temporário
+        // Limpar arquivo temporário de upload
         if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
 
-        res.json({ success: true, content: copyContent, id: id });
+        res.json({ 
+            success: true, 
+            content: copyContent, 
+            imagem: imagemGeradaUrl,
+            id: id 
+        });
 
     } catch (error) {
         console.error('🔥 FALHA NO PIPELINE ORION V2:', error);

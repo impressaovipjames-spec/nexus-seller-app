@@ -145,7 +145,7 @@ generateBtn.addEventListener('click', async () => {
         const data = await response.json();
         
         if (data.success) {
-            renderResult(data.content);
+            renderResult(data.content, data.imagem);
             loadHistory();
         } else {
             resultDisplay.innerHTML = `<div style="color: red;">🚨 Erro do Orion: ${data.error}</div>`;
@@ -173,9 +173,19 @@ function setLoading(isLoading) {
     }
 }
 
-function renderResult(content) {
-    // Limpeza estética do output conforme padrão Orion
-    resultDisplay.innerHTML = `<div class="output-v2">${content}</div>`;
+function renderResult(content, imageUri = null) {
+    let html = '';
+    if (imageUri) {
+        html += `
+            <div class="creative-output">
+                <h3>🖼️ CRIATIVO GERADO (ORION 3.0)</h3>
+                <img src="${imageUri}" alt="Criativo Gerado" class="generated-image">
+                <a href="${imageUri}" target="_blank" class="download-btn">BAIXAR CRIATIVO 📥</a>
+            </div>
+        `;
+    }
+    html += `<div class="output-v2">${content}</div>`;
+    resultDisplay.innerHTML = html;
 }
 
 // Funções de Utilitário (Cópia e Histórico)

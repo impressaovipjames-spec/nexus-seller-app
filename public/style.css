@@ -563,3 +563,50 @@ button:active {
     vertical-align: middle;
     margin-left: 10px;
 }
+
+/* --- ORION 3.0 CREATIVE STYLES --- */
+
+.creative-output {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: #FFFFFF;
+    border: 2px solid var(--accent-lilac);
+    border-radius: 20px;
+    text-align: center;
+    box-shadow: 0 10px 30px var(--accent-glow);
+}
+
+.creative-output h3 {
+    font-size: 0.9rem;
+    color: var(--accent-lilac);
+    margin-bottom: 1rem;
+    letter-spacing: 1px;
+}
+
+.generated-image {
+    width: 100%;
+    max-width: 400px;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--border);
+}
+
+.download-btn {
+    display: inline-block;
+    padding: 0.8rem 2rem;
+    background: var(--grad-pink-lilac);
+    color: #FFFFFF;
+    text-decoration: none;
+    font-weight: bold;
+    border-radius: 50px;
+    font-size: 0.9rem;
+    transition: 0.3s;
+    box-shadow: 0 4px 15px rgba(198, 166, 247, 0.4);
+}
+
+.download-btn:hover {
+    transform: translateY(-3px);
+    filter: brightness(1.1);
+    box-shadow: 0 8px 20px var(--accent-glow);
+}
