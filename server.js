@@ -279,10 +279,20 @@ app.post('/api/generate-v2', upload.single('image'), async (req, res) => {
         console.log("✅ ARKHEON Concluído.");
 
         // ESTÁGIO 2: LEXION (Engenharia de Prompt)
-        console.log("📡 Ativando LEXION...");
-        const lexionPromptBase = fs.readFileSync(path.join(__dirname, 'prompts', 'lexion.txt'), 'utf8');
-        const lexionInput = `DADOS ESTRATÉGICOS DO ARKHEON:\n${arkheonResult}\nPREÇO: ${preco}`;
-        const lexionResult = await callLexion(lexionPromptBase, lexionInput);
+        console.log("📡 Ativando LEXION (Diretor de Criação)...");
+        const lexionFullManual = fs.readFileSync(path.join(__dirname, 'prompts', 'lexion_full.txt'), 'utf8');
+        
+        const lexionSystemContext = `
+        ${lexionFullManual}
+        
+        MISSÃO ATUAL:
+        Transformar a análise do ARKHEON em um PROMPT FINAL de alta conversão.
+        Siga os templates da Parte 2 (VÍDEO, IMAGEM, CRIAÇÃO) para compor a instrução para o GEMINI.
+        O prompt final deve solicitar Título, Descrição, 5 Bullets, Legenda e CTA.
+        `;
+
+        const lexionInput = `ANÁLISE DO ARKHEON:\n${arkheonResult}\nPREÇO: ${preco}`;
+        const lexionResult = await callLexion(lexionSystemContext, lexionInput);
         console.log("✅ LEXION Concluído.");
 
         // ESTÁGIO 3: GEMINI (Execução Final)
