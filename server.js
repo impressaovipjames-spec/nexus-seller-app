@@ -306,38 +306,41 @@ app.post('/api/generate-v2', upload.single('image'), async (req, res) => {
         console.log("📡 Ativando LEXION (Diretor de Criação)...");
         const lexionFullManual = fs.readFileSync(path.join(__dirname, 'prompts', 'lexion_full.txt'), 'utf8');
         
-        // --- BLINDAGEM LEXION (OBRIGATÓRIO) ---
-        let analise = arkheonResult;
-        
-        // 1. Validar Input e 2. Garantir String
-        if (!analise || (typeof analise === "string" && analise.trim().length === 0)) {
-            analise = "produto genérico com apelo de mercado";
+        // --- BLINDAGEM TRIPLA LEXION (REGRA ABSOLUTA ORION) ---
+        // 1. FORÇAR FALLBACK PRÉ-AÇÃO
+        let entradaLexion = arkheonResult;
+        if (!entradaLexion || (typeof entradaLexion === "string" && entradaLexion.trim().length === 0)) {
+            entradaLexion = "produto genérico com apelo de mercado";
         }
-        if (typeof analise !== "string") {
-            analise = JSON.stringify(analise);
+        // 2. GARANTIR STRING
+        if (typeof entradaLexion !== "string") {
+            entradaLexion = JSON.stringify(entradaLexion);
         }
+        console.log("📂 Entrada Lexion:", entradaLexion);
 
-        // 3. Log de Debug
-        console.log("📂 Entrada Lexion:", analise);
-
-        const lexionInput = `ANÁLISE DO ARKHEON:\n${analise}\nPREÇO: ${preco}`;
+        const lexionInput = `ANÁLISE DO ARKHEON:\n${entradaLexion}\nPREÇO: ${preco}`;
         
-        let lexionResult;
+        let promptFinal;
         try {
-            // 4. Try/Catch Obrigatório
-            lexionResult = await callLexion(lexionFullManual, lexionInput);
+            // 3. TRY/CATCH FORÇADO
+            promptFinal = await callLexion(lexionFullManual, lexionInput);
             console.log("✅ LEXION Concluído.");
-        } catch (lexionError) {
-            console.error("🚨 Erro Lexion:", lexionError);
-            // 5. Regra Crítica: Fallback Sempre
-            lexionResult = "Gerar copy simples de produto com base em contexto genérico";
+        } catch (error) {
+            console.error("🚨 Erro Lexion:", error);
+            promptFinal = "Gerar copy simples de produto com base em contexto genérico";
         }
-        // --- FIM BLINDAGEM LEXION ---
+
+        // 4. GARANTIA FINAL (NUNCA QUEBRAR PIPELINE)
+        if (!promptFinal) {
+            promptFinal = "Gerar copy simples de produto com base em contexto genérico";
+        }
+        // --- FIM BLINDAGEM TRIPLA ---
 
         // ESTÁGIO 3: SOLARIS (Direção de Arte)
         console.log("📡 Ativando SOLARIS (Direção de Arte)...");
         const solarisFullManual = fs.readFileSync(path.join(__dirname, 'prompts', 'solaris_full.txt'), 'utf8');
         const solarisInput = `ANÁLISE DO ARKHEON:\n${arkheonResult}`;
+        const solarisResult = await callSolaris(solarisFullManual, solarisInput);
         const solarisResult = await callLexion(solarisFullManual, solarisInput); // Usamos a mesma função de prompt genérico
         console.log("✅ SOLARIS Concluído.");
 

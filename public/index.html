@@ -36,14 +36,16 @@
                         <p>Envie a foto e receba o lucro.</p>
                     </div>
                     
-                    <div id="dropZone" class="upload-area">
-                        <input type="file" id="fileInput" accept="image/*" hidden>
-                        <div class="upload-prompt">
-                            <span class="icon">📸</span>
-                            <p>Clique ou arraste a <strong>foto do produto</strong></p>
-                            <span class="subtext">JPG, PNG ou WebP</span>
+                    <div class="upload-wrapper">
+                        <div id="dropZone" class="upload-area">
+                            <input type="file" id="fileInput" accept="image/*" hidden>
+                            <div class="upload-prompt">
+                                <span class="icon">📸</span>
+                                <p>Clique ou arraste a <strong>foto do produto</strong></p>
+                                <span class="subtext">JPG, PNG ou WebP</span>
+                            </div>
+                            <img id="imagePreview" class="hidden">
                         </div>
-                        <img id="imagePreview" class="hidden">
                         <button id="removeImage" class="btn-remove hidden">Remover imagem</button>
                     </div>
 
