@@ -307,24 +307,30 @@ app.post('/api/generate-v2', upload.single('image'), async (req, res) => {
         const lexionFullManual = fs.readFileSync(path.join(__dirname, 'prompts', 'lexion_full.txt'), 'utf8');
         
         // --- BLINDAGEM LEXION (OBRIGATÓRIO) ---
-        let inputLexion = arkheonResult;
-        if (!inputLexion || (typeof inputLexion === "string" && inputLexion.trim().length === 0)) {
-            inputLexion = "Produto detectado, mas scan visual falhou. Gere estratégia de mercado genérica de alta conversão.";
+        let analise = arkheonResult;
+        
+        // 1. Validar Input e 2. Garantir String
+        if (!analise || (typeof analise === "string" && analise.trim().length === 0)) {
+            analise = "produto genérico com apelo de mercado";
         }
-        if (typeof inputLexion !== "string") {
-            inputLexion = JSON.stringify(inputLexion);
+        if (typeof analise !== "string") {
+            analise = JSON.stringify(analise);
         }
-        console.log("📂 Entrada Lexion:", inputLexion);
 
-        const lexionInput = `ANÁLISE DO ARKHEON:\n${inputLexion}\nPREÇO: ${preco}`;
+        // 3. Log de Debug
+        console.log("📂 Entrada Lexion:", analise);
+
+        const lexionInput = `ANÁLISE DO ARKHEON:\n${analise}\nPREÇO: ${preco}`;
         
         let lexionResult;
         try {
+            // 4. Try/Catch Obrigatório
             lexionResult = await callLexion(lexionFullManual, lexionInput);
             console.log("✅ LEXION Concluído.");
         } catch (lexionError) {
-            console.error("🚨 FALHA NO LEXION:", lexionError);
-            lexionResult = "PROMPT FINAL: Gere uma copy de vendas persuasiva para o produto, focando em benefícios claros e CTA forte.";
+            console.error("🚨 Erro Lexion:", lexionError);
+            // 5. Regra Crítica: Fallback Sempre
+            lexionResult = "Gerar copy simples de produto com base em contexto genérico";
         }
         // --- FIM BLINDAGEM LEXION ---
 

@@ -109,7 +109,6 @@ removeImageBtn.addEventListener('click', (e) => {
     imagePreview.classList.add('hidden');
     removeImageBtn.classList.add('hidden');
     uploadPrompt.classList.remove('hidden');
-    console.log("🗑️ Imagem removida.");
 });
 
 /**
