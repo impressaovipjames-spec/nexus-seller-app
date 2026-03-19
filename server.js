@@ -272,11 +272,25 @@ app.post('/api/generate-v2', upload.single('image'), async (req, res) => {
         imagePath = req.file.path;
         const imageBase64 = fs.readFileSync(imagePath).toString('base64');
 
-        // ESTÁGIO 1: ARKHEON (Scanner de Dor)
-        console.log("📡 Ativando ARKHEON...");
-        const arkheonPromptBase = fs.readFileSync(path.join(__dirname, 'prompts', 'arkheon.txt'), 'utf8');
-        const arkheonResult = await callArkheon(arkheonPromptBase, imageBase64);
-        console.log("✅ ARKHEON Concluído.");
+        // ESTÁGIO 1: HARKHEON (Scanner de Dor e Visão)
+        console.log("📡 Ativando HARKHEON (O Princípio da Visão)...");
+        const harkheonFullManual = fs.readFileSync(path.join(__dirname, 'prompts', 'harkheon_full.txt'), 'utf8');
+        
+        const harkheonSystemContext = `
+        ${harkheonFullManual}
+        
+        MÓDULO LUZ ATIVO: Comece a resposta com um versículo NVI real.
+        
+        MISSÃO ATUAL:
+        Analise a imagem fornecida. 
+        Execute o MÓDULO 1: SCAN DE DORES (PROCESSO COMPLETO).
+        Entregue a SAÍDA PADRÃO: PRODUTO, CATEGORIA, PÚBLICO, DOR, DESEJO, GANHO EMOCIONAL.
+        Identifique a OPORTUNIDADE PRINCIPAL e PRÓXIMO PASSO SUGERIDO.
+        Use o Protocolo AAH se houver incertezas.
+        `;
+
+        const arkheonResult = await callArkheon(harkheonSystemContext, imageBase64);
+        console.log("✅ HARKHEON Concluído.");
 
         // ESTÁGIO 2: LEXION (Engenharia de Prompt)
         console.log("📡 Ativando LEXION (Diretor de Criação)...");
