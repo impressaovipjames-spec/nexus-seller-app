@@ -35,16 +35,26 @@ app.post("/api/generate-image", async (req, res) => {
     const prompt = String(rawPrompt).replace(/\s+/g, " ").trim().slice(0, 600);
     const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1080&height=1080&model=flux&nologo=true`;
 
-    const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+    const response = await axios.get(imageUrl, { 
+      responseType: 'arraybuffer',
+      timeout: 15000,
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) NexusSeller/2.0' }
+    });
+
     const contentType = response.headers["content-type"] || "image/png";
+    const buffer = Buffer.from(response.data);
+
+    console.log(`📸 Proxy Image: Prompt=${prompt.slice(0,30)}... Size=${buffer.length} bytes Type=${contentType}`);
+
+    if (buffer.length < 1000) {
+       throw new Error("Imagem gerada inválida ou curta demais.");
+    }
     
     res.setHeader("Content-Type", contentType);
     res.setHeader("Content-Disposition", 'inline; filename="criativo-nexus.png"');
     
-    // Atualizar Métricas (Tipo Imagem)
     updateMetrics("image");
-
-    return res.send(Buffer.from(response.data));
+    return res.send(buffer);
   } catch (error) {
     console.error("[generate-image] erro:", error);
     return res.status(500).json({ ok: false, error: "Falha ao gerar criativo." });
