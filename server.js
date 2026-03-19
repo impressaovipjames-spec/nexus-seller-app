@@ -341,7 +341,6 @@ app.post('/api/generate-v2', upload.single('image'), async (req, res) => {
         const solarisFullManual = fs.readFileSync(path.join(__dirname, 'prompts', 'solaris_full.txt'), 'utf8');
         const solarisInput = `ANÁLISE DO ARKHEON:\n${arkheonResult}`;
         const solarisResult = await callSolaris(solarisFullManual, solarisInput);
-        const solarisResult = await callLexion(solarisFullManual, solarisInput); // Usamos a mesma função de prompt genérico
         console.log("✅ SOLARIS Concluído.");
 
         // Extrair o Prompt Visual do Solaris
