@@ -15,6 +15,7 @@ const resultDisplay = document.getElementById('resultDisplay');
 const precoInput = document.getElementById('preco');
 const historyList = document.getElementById('historyList');
 const metricsDisplay = document.getElementById('metricsDisplay');
+const removeImageBtn = document.getElementById('removeImage');
 
 let selectedFile = null;
 
@@ -51,6 +52,7 @@ function handleImage(file) {
     reader.onload = (e) => {
         imagePreview.src = e.target.result;
         imagePreview.classList.remove('hidden');
+        removeImageBtn.classList.remove('hidden');
         uploadPrompt.classList.add('hidden');
     };
     reader.readAsDataURL(file);
@@ -96,6 +98,18 @@ document.addEventListener('paste', (event) => {
             handleImage(item.getAsFile());
         }
     }
+});
+
+// Remover Imagem
+removeImageBtn.addEventListener('click', (e) => {
+    e.stopPropagation(); // Evita disparar o clique do dropZone
+    selectedFile = null;
+    fileInput.value = '';
+    imagePreview.src = '';
+    imagePreview.classList.add('hidden');
+    removeImageBtn.classList.add('hidden');
+    uploadPrompt.classList.remove('hidden');
+    console.log("🗑️ Imagem removida.");
 });
 
 /**

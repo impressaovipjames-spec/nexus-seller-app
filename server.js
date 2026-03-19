@@ -14,7 +14,8 @@ const path = require('path');
 const multer = require('multer');
 
 const app = express();
-const upload = multer({ dest: 'uploads/' });
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
 const config = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), 'utf8'));
 const PORT = process.env.PORT || config.port || 8080;
 console.log(`🔥 SERVER ATIVO NA PORTA ${PORT}`);
@@ -264,13 +265,18 @@ app.get('/health', (req, res) => {
 
 // --- NEXUS V2 - PIPELINE ARKHEON + LEXION + GEMINI ---
 app.post('/api/generate-v2', upload.single('image'), async (req, res) => {
-    let imagePath = null;
     try {
+        console.log("📂 Arkheon: Arquivo recebido pelo Multer:", req.file ? {
+            originalname: req.file.originalname,
+            mimetype: req.file.mimetype,
+            size: req.file.size
+        } : "Nenhum arquivo");
+
         if (!req.file) return res.status(400).json({ success: false, error: 'O Orion precisa da foto do produto para o Arkheon escanear.' });
+        if (!req.file.mimetype.startsWith('image/')) return res.status(400).json({ success: false, error: 'Arquivo inválido. Por favor, envie uma imagem.' });
 
         const preco = req.body.preco || "Sob consulta";
-        imagePath = req.file.path;
-        const imageBase64 = fs.readFileSync(imagePath).toString('base64');
+        const imageBase64 = req.file.buffer.toString('base64');
 
         // ESTÁGIO 1: HARKHEON (Scanner de Dor e Visão)
         console.log("📡 Ativando HARKHEON (O Princípio da Visão)...");
@@ -287,8 +293,14 @@ app.post('/api/generate-v2', upload.single('image'), async (req, res) => {
         Entregue a SAÍDA PADRÃO: PRODUTO, CATEGORIA, PÚBLICO, DOR, DESEJO, GANHO EMOCIONAL.
         `;
 
-        const arkheonResult = await callArkheon(harkheonSystemContext, imageBase64);
-        console.log("✅ HARKHEON Concluído.");
+        let arkheonResult;
+        try {
+            arkheonResult = await callArkheon(harkheonSystemContext, imageBase64);
+            console.log("✅ HARKHEON Concluído.");
+        } catch (arkheonError) {
+            console.error("🚨 FALHA NO HARKHEON SCAN:", arkheonError);
+            arkheonResult = "O scan visual falhou momentaneamente. Produto: " + (req.body.nome_produto || "Nexus Product") + ". Use as informações de preço fornecidas: " + preco;
+        }
 
         // ESTÁGIO 2: LEXION (Engenharia de Prompt de Venda)
         console.log("📡 Ativando LEXION (Diretor de Criação)...");
@@ -335,9 +347,6 @@ app.post('/api/generate-v2', upload.single('image'), async (req, res) => {
         const filename = `${id}.txt`;
         fs.writeFileSync(path.join(outputDir, filename), copyContent);
 
-        // Limpar arquivo temporário de upload
-        if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
-
         res.json({ 
             success: true, 
             content: copyContent, 
@@ -347,7 +356,6 @@ app.post('/api/generate-v2', upload.single('image'), async (req, res) => {
 
     } catch (error) {
         console.error('🔥 FALHA NO PIPELINE ORION V2:', error);
-        if (imagePath && fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
         res.status(500).json({ success: false, error: error.message });
     }
 });
