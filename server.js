@@ -40,6 +40,10 @@ app.post("/api/generate-image", async (req, res) => {
     
     res.setHeader("Content-Type", contentType);
     res.setHeader("Content-Disposition", 'inline; filename="criativo-nexus.png"');
+    
+    // Atualizar Métricas (Tipo Imagem)
+    updateMetrics("image");
+
     return res.send(Buffer.from(response.data));
   } catch (error) {
     console.error("[generate-image] erro:", error);
@@ -49,14 +53,58 @@ app.post("/api/generate-image", async (req, res) => {
 
 const inputDir = path.resolve(__dirname, config.input_dir);
 const outputDir = path.resolve(__dirname, config.output_dir);
-const metricsPath = path.join(__dirname, 'metrics', 'metrics.json');
 const promptFilePath = path.resolve(__dirname, config.prompt_file);
 const templateFilePath = path.resolve(__dirname, config.template_file);
 
-// Garantir que pastas existem
-[inputDir, outputDir, path.join(__dirname, 'metrics')].forEach(dir => {
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-});
+const metricsDir = path.join(__dirname, "metrics");
+const metricsFile = path.join(metricsDir, "metrics.json");
+
+// ===============================
+// 🧠 INIT METRICS (AUTO CREATE)
+// ===============================
+function initMetrics() {
+  try {
+    if (!fs.existsSync(metricsDir)) fs.mkdirSync(metricsDir, { recursive: true });
+    if (!fs.existsSync(metricsFile)) {
+      fs.writeFileSync(metricsFile, JSON.stringify({
+        totalRequests: 0,
+        totalImages: 0,
+        lastUpdate: new Date().toISOString()
+      }, null, 2));
+    }
+    // Cria também pastas de input/output se não existirem
+    if (!fs.existsSync(inputDir)) fs.mkdirSync(inputDir, { recursive: true });
+    if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
+  } catch (error) {
+    console.error("[METRICS INIT ERROR]", error);
+  }
+}
+
+function readMetrics() {
+  try {
+    initMetrics();
+    const data = fs.readFileSync(metricsFile, "utf-8");
+    return JSON.parse(data);
+  } catch (error) {
+    console.error("[METRICS READ ERROR]", error);
+    return { totalRequests: 0, totalImages: 0, lastUpdate: new Date().toISOString() };
+  }
+}
+
+function updateMetrics(type = "request") {
+  try {
+    const metrics = readMetrics();
+    if (type === "request") metrics.totalRequests++;
+    if (type === "image") metrics.totalImages++;
+    metrics.lastUpdate = new Date().toISOString();
+    fs.writeFileSync(metricsFile, JSON.stringify(metrics, null, 2));
+  } catch (error) {
+    console.error("[METRICS UPDATE ERROR]", error);
+  }
+}
+
+// Inicializar estrutura
+initMetrics();
 
 /**
  * Utilitários do Motor (Migrados do main.js)
@@ -486,10 +534,8 @@ app.post('/api/generate-v2', upload.single('image'), async (req, res) => {
 
         const finalizedCopy = cleanPublicCopy(rawFinalData);
 
-        // Salvar métricas e histórico (Mantendo o original para logs internos se necessário)
-        const metrics = JSON.parse(fs.readFileSync(metricsPath, 'utf8'));
-        metrics.total_gerações = (metrics.total_gerações || 0) + 1;
-        fs.writeFileSync(metricsPath, JSON.stringify(metrics, null, 2));
+        // Atualizar Métricas (Tipo Request)
+        updateMetrics("request");
 
         const id = "NX-" + Math.floor(1000 + Math.random() * 9000);
         const filename = `${id}.txt`;
