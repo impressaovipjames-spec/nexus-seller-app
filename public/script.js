@@ -167,11 +167,14 @@ function setLoading(isLoading) {
 function renderResult(content, imageUri = null) {
     let html = '';
     if (imageUri) {
+        // Garantir URL do Pollinations para render interno
+        const cleanImageUri = imageUri.includes('pollinations.ai') ? imageUri : `https://image.pollinations.ai/prompt/${encodeURIComponent(imageUri)}?width=1080&height=1080&model=flux`;
+        
         html += `
             <div class="creative-output">
                 <h3>🖼️ CRIATIVO GERADO (ORION 3.0)</h3>
-                <img src="${imageUri}" alt="Criativo Gerado" class="generated-image">
-                <a href="${imageUri}" target="_blank" class="download-btn">BAIXAR CRIATIVO 📥</a>
+                <img src="${cleanImageUri}" alt="Criativo Gerado" class="generated-image">
+                <button onclick="downloadImage('${cleanImageUri}')" class="download-btn">BAIXAR CRIATIVO 📥</button>
             </div>
         `;
     }
@@ -222,6 +225,28 @@ window.copyByChannel = (channel) => {
     navigator.clipboard.writeText(filteredText).then(() => {
         alert(`Copy para ${channel.toUpperCase()} copiada! 🚀`);
     });
+};
+
+window.downloadImage = async (url) => {
+    try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = `criativo_nexus_${Date.now()}.jpg`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(blobUrl);
+    } catch (e) {
+        // Fallback simples se fetch falhar (CORS etc)
+        const link = document.createElement('a');
+        link.href = url;
+        link.target = '_blank';
+        link.download = 'criativo.jpg';
+        link.click();
+    }
 };
 
 /**

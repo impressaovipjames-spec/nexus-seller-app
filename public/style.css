@@ -345,7 +345,7 @@ button:active {
     border: 2px solid var(--border);
     padding: 1.5rem;
     border-radius: 12px;
-    height: 440px; /* Reduzido de 500px para caber na tela sem scroll externo */
+    max-height: 600px;
     overflow-y: auto;
     font-family: 'Outfit', sans-serif;
     white-space: pre-wrap;
@@ -549,7 +549,8 @@ button:active {
     border: 1px solid var(--border);
     border-radius: 15px;
     padding: 1.5rem;
-    min-height: 480px;
+    max-height: 600px;
+    overflow-y: auto;
     white-space: pre-wrap;
     line-height: 1.7;
     font-size: 1rem;
