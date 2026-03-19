@@ -560,8 +560,8 @@ button:active {
 
 .btn-remove {
     position: absolute;
-    top: -15px;
-    right: -10px;
+    top: -55px; /* Subiu +40px (era -15px) */
+    right: -20px; /* Moveu +10px para a direita (era -10px) */
     padding: 0.5rem 1rem;
     background: #FFDADA;
     color: #900;

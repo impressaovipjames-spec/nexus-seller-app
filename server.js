@@ -128,6 +128,38 @@ Cinematic drone shot of the product, 8k, photorealistic, luxury vibes.
     });
 }
 
+// Gerador de Prompt Visual (Solaris)
+async function callSolaris(systemPrompt, userPrompt) {
+    const fullPrompt = `${systemPrompt}\n\nENTRADA:\n${userPrompt}`;
+    if (config.api_key && config.api_key !== "YOUR_API_KEY_HERE") {
+        return new Promise((resolve, reject) => {
+            const postData = JSON.stringify({ contents: [{ parts: [{ text: fullPrompt }] }] });
+            const options = {
+                hostname: 'generativelanguage.googleapis.com',
+                path: `/v1beta/models/${config.model}:generateContent?key=${config.api_key}`,
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Content-Length': postData.length }
+            };
+            const req = https.request(options, (res) => {
+                let body = '';
+                res.on('data', (d) => body += d);
+                res.on('end', () => {
+                    try {
+                        const response = JSON.parse(body);
+                        if (response.candidates && response.candidates[0].content) {
+                            resolve(response.candidates[0].content.parts[0].text);
+                        } else { resolve("produto em destaque, fundo limpo, iluminação suave"); }
+                    } catch (e) { resolve("produto em destaque, fundo limpo"); }
+                });
+            });
+            req.on('error', (e) => resolve("produto em destaque, fundo limpo"));
+            req.write(postData);
+            req.end();
+        });
+    }
+    return "produto em destaque, fundo limpo, estilo profissional";
+}
+
 function parseResponseToTemplate(rawResponse, template) {
     let output = template;
     const mapping = {
@@ -339,9 +371,29 @@ app.post('/api/generate-v2', upload.single('image'), async (req, res) => {
         // ESTÁGIO 3: SOLARIS (Direção de Arte)
         console.log("📡 Ativando SOLARIS (Direção de Arte)...");
         const solarisFullManual = fs.readFileSync(path.join(__dirname, 'prompts', 'solaris_full.txt'), 'utf8');
-        const solarisInput = `ANÁLISE DO ARKHEON:\n${arkheonResult}`;
-        const solarisResult = await callSolaris(solarisFullManual, solarisInput);
-        console.log("✅ SOLARIS Concluído.");
+        
+        // --- BLINDAGEM TRIPLA SOLARIS (REGRA ABSOLUTA ORION) ---
+        // 1. FORÇAR FALLBACK PRÉ-AÇÃO
+        let entradaSolaris = promptFinal;
+        if (!entradaSolaris) {
+            entradaSolaris = "produto em destaque, fundo limpo, iluminação suave";
+        }
+
+        let promptVisual;
+        try {
+            // 2. TRY/CATCH FORÇADO
+            promptVisual = await callSolaris(solarisFullManual, entradaSolaris);
+            console.log("✅ SOLARIS Concluído.");
+        } catch (error) {
+            console.error("🚨 Erro Solaris:", error);
+            promptVisual = "produto em destaque, fundo limpo, iluminação suave, estilo profissional";
+        }
+
+        // 3. GARANTIA FINAL (NUNCA QUEBRAR PIPELINE)
+        if (!promptVisual) {
+            promptVisual = "produto em destaque, fundo limpo";
+        }
+        // --- FIM BLINDAGEM SOLARIS ---
 
         // Extrair o Prompt Visual do Solaris
         const promptVisualMatch = solarisResult.match(/PROMPT VISUAL:([\s\S]*)/i) || solarisResult.match(/DALL·E ENGINEER:([\s\S]*)/i);
