@@ -396,8 +396,10 @@ app.post('/api/generate-v2', upload.single('image'), async (req, res) => {
         // --- FIM BLINDAGEM SOLARIS ---
 
         // Extrair o Prompt Visual do Solaris
-        const promptVisualMatch = solarisResult.match(/PROMPT VISUAL:([\s\S]*)/i) || solarisResult.match(/DALL·E ENGINEER:([\s\S]*)/i);
-        const promptVisual = promptVisualMatch ? promptVisualMatch[1].trim() : solarisResult;
+        const promptVisualMatch = promptVisual.match(/PROMPT VISUAL:([\s\S]*)/i) || promptVisual.match(/DALL·E ENGINEER:([\s\S]*)/i);
+        if (promptVisualMatch) {
+            promptVisual = promptVisualMatch[1].trim();
+        }
 
         // ESTÁGIO 4: POLLINATIONS (Geração de Imagem - FAIL-SAFE)
         let imagemGeradaUrl = null;
